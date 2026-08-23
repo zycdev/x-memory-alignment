@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contribution guide
+    url: https://github.com/zycdev/cross-agent-memory-distiller/blob/main/CONTRIBUTING.md
+    about: How reports are collected, published, and closed, and what never belongs in an issue.

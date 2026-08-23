@@ -1,0 +1,87 @@
+name: Defect report
+description: Something behaves incorrectly
+title: "[bug] "
+labels: ["kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a defect.
+
+        **Never include** credentials, tokens, absolute paths from your home
+        directory, memory or checklist content, or transcript excerpts. Replace
+        them with a path class such as `<claude-home>/skills/<skill>`. A report
+        that has to be redacted after the fact is already public.
+
+        **About the origin marker.** Reports written by the maintainers arrive in
+        batches from a private local queue, and each one carries a hidden marker
+        of the form `<!-- camd-report-id: CAMD-R-YYYYMMDD-XXXXXX -->`. Please do
+        not add such a marker to your issue. Its absence is exactly what marks an
+        issue as externally reported: the synchronisation tooling matches only
+        its own identifiers, so an unmarked issue is never adopted or edited.
+        Maintainers check semantic overlap manually before publishing a batch.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the project does this concern?
+      options:
+        - guard
+        - claude-adapter
+        - codex-adapter
+        - protocol
+        - install
+        - docs
+        - loop
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent in use
+      options:
+        - claude-code
+        - codex
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you observed, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Smallest reproduction
+      description: |
+        The shortest command sequence or file shape that shows the behaviour.
+        Prefer a synthetic example over anything from your real memory.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: A tag, or the commit you installed from.
+    validations:
+      required: false
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before submitting
+      options:
+        - label: This report contains no credentials, private absolute paths, memory content, or transcript text.
+          required: true
+        - label: I did not add a `camd-report-id` marker.
+          required: true

@@ -1,0 +1,75 @@
+# Label vocabulary for this repository.
+#
+# This file is the source of truth. Labels are created or updated from it; they
+# are not invented in the web interface, because the same four families are used
+# by the maintainers' local improvement queue and a label that exists only on
+# GitHub cannot be reconciled with it.
+#
+# Families:
+#   kind/*       what sort of report this is
+#   component/*  which part of the project it concerns
+#   agent/*      which agent the reporter was using, when that is known
+#   cycle/*      the maintenance cycle that triaged it
+#
+# `cycle/<n>` labels are created one per maintenance cycle, using `cycle/1` below
+# as the pattern. Triage dispositions such as `fix-now` or `wontfix` are
+# deliberately not labels: they live in the maintainers' queue, and duplicating
+# them here would create two records that can disagree.
+
+- name: kind/bug
+  color: d73a4a
+  description: Something behaves incorrectly
+- name: kind/friction
+  color: e99695
+  description: It works, but using it is harder than it should be
+- name: kind/idea
+  color: a2eeef
+  description: A proposal that is not yet a concrete change
+- name: kind/docs
+  color: 0075ca
+  description: Documentation is missing, wrong, or misleading
+- name: kind/question
+  color: d876e3
+  description: A question about intended behaviour
+- name: kind/surprise
+  color: fbca04
+  description: Worked as designed and still surprised the reporter
+
+- name: component/guard
+  color: c5def5
+  description: Shared validation and mechanical guards
+- name: component/claude-adapter
+  color: c5def5
+  description: Codex-to-Claude adapter
+- name: component/codex-adapter
+  color: c5def5
+  description: Claude-to-Codex adapter
+- name: component/protocol
+  color: c5def5
+  description: Shared protocol, schema, and references
+- name: component/install
+  color: c5def5
+  description: Installer and skill discovery
+- name: component/docs
+  color: c5def5
+  description: Repository documentation
+- name: component/loop
+  color: c5def5
+  description: Improvement loop, queue, and maintenance cycles
+- name: component/unknown
+  color: c5def5
+  description: Component not yet determined
+
+- name: agent/claude-code
+  color: bfd4f2
+  description: Observed while using Claude Code
+- name: agent/codex
+  color: bfd4f2
+  description: Observed while using Codex
+- name: agent/unknown
+  color: bfd4f2
+  description: Agent not recorded or not relevant
+
+- name: cycle/1
+  color: ededed
+  description: Triaged in maintenance cycle 1

@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+tmp/
+dist/
+build/
+*.egg-info/
+
+# Never commit live memory-distillation artifacts.
+*memory-checklist*.md
+*live-e2e-private*.md

@@ -1,0 +1,81 @@
+name: Friction, idea, question, or surprise
+description: It works, but something is harder, unclear, or unexpected
+title: "[friction] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when nothing is strictly broken. Friction and surprises are
+        as useful as defects: "it worked as designed and still surprised me" is
+        often the most valuable report this project receives, and it has its own
+        kind rather than being filed as a defect.
+
+        **Never include** credentials, absolute paths from your home directory,
+        memory or checklist content, or transcript excerpts.
+
+        **About the origin marker.** Maintainer reports arrive from a private
+        local queue and carry a hidden `<!-- camd-report-id: ... -->` marker.
+        Please do not add one. An unmarked issue is treated as externally
+        reported and is never adopted or rewritten by synchronisation.
+        Maintainers check semantic overlap manually before publishing a batch.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - friction
+        - idea
+        - question
+        - surprise
+        - docs
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - guard
+        - claude-adapter
+        - codex-adapter
+        - protocol
+        - install
+        - docs
+        - loop
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent in use
+      options:
+        - claude-code
+        - codex
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What you ran into
+      description: What you were doing, and what made it harder or more surprising than expected.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would have been better
+      description: A concrete alternative, if you have one. "I do not know" is an acceptable answer.
+    validations:
+      required: false
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before submitting
+      options:
+        - label: This report contains no credentials, private absolute paths, memory content, or transcript text.
+          required: true
+        - label: I did not add a `camd-report-id` marker.
+          required: true
