@@ -9,7 +9,7 @@ ever published here.
 
 Credentials and tokens, absolute paths from a home directory, memory or
 checklist content, and transcript excerpts. Replace a real path with a path
-class such as `<claude-home>/skills/<skill>`. This project distills memory
+class such as `<claude-home>/skills/<skill>`. This project aligns memory
 between agents, so its own bug reports naturally attract exactly the material
 that must not be published. A report that has to be redacted after the fact is
 already public.
@@ -18,7 +18,7 @@ already public.
 
 Maintainers do not open an issue at the moment something goes wrong. The skill
 keeps a private, offline queue on the maintainer's machine, described in
-`skills/cross-agent-memory-distiller/references/improvement-loop.md`. Capture is
+`skills/x-memory-alignment/references/improvement-loop.md`. Capture is
 local: it writes nothing to this repository and contacts no network. Publication
 is a separate, explicit, batched act that happens during a maintenance cycle,
 after the material has been reviewed and redacted, and after the maintainer
@@ -121,7 +121,7 @@ either publish private material or let the tool act without the user.
   resolved root and repository identity, and the mapping is shown in the
   checklist.
 - Provenance is preserved, and a candidate that originated in the receiving
-  agent is refused rather than distilled back into it.
+  agent is refused rather than aligned back into it.
 - Runtime checklist language follows the conversation. No language is hardcoded.
 - Ordinary use performs no repository write and no network access.
   `improve_sync.py` is the only GitHub-facing helper, it runs only in an
@@ -135,7 +135,7 @@ either publish private material or let the tool act without the user.
 
 ## Development notes
 
-- The canonical skill lives under `skills/cross-agent-memory-distiller/`.
+- The canonical skill lives under `skills/x-memory-alignment/`.
 - Install it with `python scripts/install_skill.py`, which never overwrites a
   destination it did not create.
 - Tests are standard library only and must not read or write real agent memory.

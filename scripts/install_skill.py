@@ -33,14 +33,15 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 SCHEMA = "install/v1"
-SKILL_NAME = "cross-agent-memory-distiller"
+SKILL_NAME = "x-memory-alignment"
+STATE_DIRECTORY_NAME = "x-memory-alignment"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_SKILL = REPO_ROOT / "skills" / SKILL_NAME
 COPY_MARKER = ".camd-install.json"
 MODES = ("link-working", "link-release", "copy")
 DEFAULT_RELEASE_REF = "main"
 HELPER_SCRIPTS = (
-    "distill_guard.py",
+    "alignment_guard.py",
     "claude_target.py",
     "codex_target.py",
     "improve_log.py",
@@ -80,7 +81,7 @@ def state_dir() -> Path:
     if override:
         return Path(override)
     base = os.environ.get("XDG_STATE_HOME") or (_home() / ".local" / "state")
-    return Path(base) / SKILL_NAME
+    return Path(base) / STATE_DIRECTORY_NAME
 
 
 def receipt_path() -> Path:

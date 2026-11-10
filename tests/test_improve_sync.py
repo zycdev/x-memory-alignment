@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "cross-agent-memory-distiller" / "scripts"
+SCRIPTS = ROOT / "skills" / "x-memory-alignment" / "scripts"
 
 
 def load_module(name: str, path: Path):
@@ -39,7 +39,7 @@ class FakeRunner:
         self.remote = remote
         self.authenticated = authenticated
         self.permission = permission
-        self.repo = "example/cross-agent-memory-distiller"
+        self.repo = "example/x-memory-alignment"
         self.labels: set[str] = set()
         self.issues: list[dict] = []
         self.calls: list[tuple[tuple[str, ...], str | None]] = []

@@ -91,6 +91,26 @@ class TargetResolutionTests(InstallerTestCase):
 
 
 class LinkWorkingTests(InstallerTestCase):
+    def test_default_installation_reuses_the_existing_private_receipt(self) -> None:
+        default_state = self.home / ".local" / "state" / "x-memory-alignment"
+        with mock.patch.dict(os.environ):
+            os.environ["CAMD_STATE_DIR"] = str(default_state)
+            install_skill.save_receipt({"schema": "install/v1", "entries": {}})
+            os.environ.pop("CAMD_STATE_DIR")
+            os.environ.pop("XDG_STATE_HOME", None)
+            install_skill.install(self.targets(), mode="link-working")
+            receipt = json.loads(
+                (default_state / "install-receipt.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(all(item["ok"] for item in install_skill.verify(self.targets())))
+        self.assertEqual(set(receipt["entries"]), {"claude", "codex"})
+        self.assertTrue(
+            all(
+                Path(entry["destination"]).name == "x-memory-alignment"
+                for entry in receipt["entries"].values()
+            )
+        )
+
     def test_plan_changes_nothing(self) -> None:
         actions = install_skill.plan_actions(
             self.targets(),

@@ -1,5 +1,5 @@
 <!-- camd:checklist {"schema":"camd/v1","source_agent":"codex","target_agent":"claude-code"} -->
-# 记忆蒸馏确认清单
+# 记忆对齐确认清单
 
 <!-- camd:candidate {"schema":"camd/v1","id":"CAMD-ZH-001","status":"conflict","source_agent":"codex","target_agent":"claude-code","origin_agent":"codex","source_scope":"project","target_scope":"project","normalization":"camd-norm/v1","fingerprint":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project":{"source_root":"/workspace/source","target_root":"/workspace/target","git_identity":"example/project","mapping":"confirmed-remote","key":"61306192c2ba41f7"}} -->
 - [x] 按以下合并建议处理

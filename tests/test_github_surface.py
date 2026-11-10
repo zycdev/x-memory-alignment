@@ -30,7 +30,7 @@ MARKER = "camd-report-id"
 
 SPEC = importlib.util.spec_from_file_location(
     "improve_log",
-    ROOT / "skills" / "cross-agent-memory-distiller" / "scripts" / "improve_log.py",
+    ROOT / "skills" / "x-memory-alignment" / "scripts" / "improve_log.py",
 )
 assert SPEC and SPEC.loader
 improve_log = importlib.util.module_from_spec(SPEC)

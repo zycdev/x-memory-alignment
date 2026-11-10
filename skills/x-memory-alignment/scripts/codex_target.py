@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude-Code-to-Codex adapter for cross-agent memory distillation.
+"""Claude-Code-to-Codex adapter for cross-agent memory alignment.
 
 The adapter performs mechanical discovery, project alignment, approved-only
 application, and verification. The agent and user decide which guidance is
@@ -24,7 +24,7 @@ from typing import Any, Iterable, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import distill_guard  # noqa: E402
+import alignment_guard  # noqa: E402
 
 
 SOURCE_AGENT = "claude-code"
@@ -39,7 +39,7 @@ PROJECT_MEMORY_INDEX = "MEMORY.md"
 CODEX_MEMORY_DIR = "memories"
 CODEX_MEMORY_INDEX = "MEMORY.md"
 CODEX_NOTES_DIR = Path("memories/extensions/ad_hoc/notes")
-NOTE_SUFFIX = "claude-memory-distillation"
+NOTE_SUFFIX = "claude-memory-alignment"
 
 HEADING_RE = re.compile(r"(?m)^(#{1,6})\s+(.+?)\s*$")
 
@@ -49,13 +49,13 @@ class AdapterError(RuntimeError):
 
 
 # Shared with the Claude adapter so that one fingerprint means the same thing in
-# both directions. See `distill_guard.NORMALIZATION`.
-normalize_meaning = distill_guard.normalize_meaning
-fingerprint_text = distill_guard.fingerprint_text
+# both directions. See `alignment_guard.NORMALIZATION`.
+normalize_meaning = alignment_guard.normalize_meaning
+fingerprint_text = alignment_guard.fingerprint_text
 
 
 def digest_file(path: Path) -> str:
-    return distill_guard.fingerprint_bytes(path.read_bytes())
+    return alignment_guard.fingerprint_bytes(path.read_bytes())
 
 
 def _outline(text: str, limit: int) -> tuple[str, tuple[str, ...]]:
@@ -271,7 +271,7 @@ def source_manifest(
     claude_home: Path, project_roots: Sequence[Path] = ()
 ) -> dict[str, Any]:
     inventory = inventory_source(claude_home, project_roots)
-    return distill_guard.build_manifest(
+    return alignment_guard.build_manifest(
         "claude-home",
         {item["path"]: item["sha256"] for item in inventory["files"]},
     )
@@ -282,7 +282,7 @@ def compare_source_manifest(
     manifest: dict[str, Any],
     project_roots: Sequence[Path] = (),
 ) -> list[str]:
-    return distill_guard.compare_manifest(
+    return alignment_guard.compare_manifest(
         manifest,
         source_manifest(claude_home, project_roots)["files"],
         root_class="claude-home",
@@ -291,7 +291,7 @@ def compare_source_manifest(
 
 def _provenance_records(text: str) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
-    for raw in distill_guard.PROVENANCE_RE.findall(text):
+    for raw in alignment_guard.PROVENANCE_RE.findall(text):
         try:
             block = json.loads(raw)
         except json.JSONDecodeError:
@@ -324,7 +324,7 @@ def collect_applied_fingerprints(codex_home: Path) -> dict[str, str]:
         for record in _provenance_records(text):
             fingerprint = record.get("fingerprint")
             if isinstance(fingerprint, str):
-                applied.setdefault(distill_guard.fingerprint_identity(record), path.name)
+                applied.setdefault(alignment_guard.fingerprint_identity(record), path.name)
     return applied
 
 
@@ -393,11 +393,11 @@ def inventory_target(
 
 
 def _provenance_comment(records: Sequence[dict[str, Any]]) -> str:
-    payload = {"schema": distill_guard.SCHEMA, "records": list(records)}
+    payload = {"schema": alignment_guard.SCHEMA, "records": list(records)}
     return "<!-- camd:provenance " + json.dumps(payload, ensure_ascii=False) + " -->"
 
 
-def _record_for(candidate: distill_guard.Candidate, applied_at: str) -> dict[str, Any]:
+def _record_for(candidate: alignment_guard.Candidate, applied_at: str) -> dict[str, Any]:
     meta = candidate.metadata
     record = {
         "id": candidate.id,
@@ -417,7 +417,7 @@ def _record_for(candidate: distill_guard.Candidate, applied_at: str) -> dict[str
         }
         target_root = candidate.project.get("target_root")
         if isinstance(target_root, str) and target_root:
-            project["key"] = distill_guard.project_key(target_root)
+            project["key"] = alignment_guard.project_key(target_root)
         record["project"] = project
     return record
 
@@ -427,10 +427,10 @@ def _safe_heading(value: str) -> str:
 
 
 def render_note(
-    candidates: Sequence[distill_guard.Candidate], *, applied_at: str
+    candidates: Sequence[alignment_guard.Candidate], *, applied_at: str
 ) -> str:
     global_items = [item for item in candidates if item.scope == "global"]
-    project_groups: dict[tuple[str, str | None], list[distill_guard.Candidate]] = {}
+    project_groups: dict[tuple[str, str | None], list[alignment_guard.Candidate]] = {}
     for candidate in candidates:
         if candidate.scope != "project":
             continue
@@ -439,7 +439,7 @@ def render_note(
         project_groups.setdefault((identity, key), []).append(candidate)
 
     lines = [
-        "# Claude-to-Codex Memory Distillation",
+        "# Claude-to-Codex Memory Alignment",
         "",
         f"Applied at `{applied_at}` after an editable checklist approval.",
         "This note contains only selected target-useful guidance.",
@@ -502,7 +502,7 @@ def _exclusive_create(path: Path, text: str) -> None:
     the target path to the guarantees this function already had.
     """
 
-    distill_guard.write_private_exclusive(path, text)
+    alignment_guard.write_private_exclusive(path, text)
 
 
 @dataclass
@@ -547,7 +547,7 @@ def apply_checklist(
 
     if not codex_home.is_dir():
         raise AdapterError(f"Codex home is not a directory: {codex_home}")
-    document = distill_guard.parse_checklist(
+    document = alignment_guard.parse_checklist(
         checklist_path.read_text(encoding="utf-8")
     )
     if not document.ok:
@@ -596,9 +596,9 @@ def apply_checklist(
         )
 
     applied_fingerprints = collect_applied_fingerprints(codex_home)
-    selected: list[distill_guard.Candidate] = []
+    selected: list[alignment_guard.Candidate] = []
     for candidate in approved:
-        fingerprint = distill_guard.fingerprint_identity(candidate.metadata)
+        fingerprint = alignment_guard.fingerprint_identity(candidate.metadata)
         if fingerprint in applied_fingerprints:
             outcome.skipped.append(
                 {
@@ -663,7 +663,7 @@ def verify_note(path: Path, *, expect_ids: Sequence[str] = ()) -> list[str]:
     if not path.is_file():
         return [f"note does not exist: {path}"]
     text = path.read_text(encoding="utf-8", errors="replace")
-    result = distill_guard.validate_provenance_text(text, expected_target=TARGET_AGENT)
+    result = alignment_guard.validate_provenance_text(text, expected_target=TARGET_AGENT)
     problems.extend(result.errors)
     records = _provenance_records(text)
     seen_ids = {
@@ -672,7 +672,7 @@ def verify_note(path: Path, *, expect_ids: Sequence[str] = ()) -> list[str]:
     for expected in expect_ids:
         if expected not in seen_ids:
             problems.append(f"{expected}: approved candidate is missing after apply")
-    if distill_guard.SCAFFOLD_ERROR_RE.search(text):
+    if alignment_guard.SCAFFOLD_ERROR_RE.search(text):
         problems.append("note contains an unresolved annotation")
     return problems
 
@@ -681,7 +681,7 @@ def verify_target(codex_home: Path) -> list[str]:
     problems: list[str] = []
     for path in _note_files(codex_home):
         text = path.read_text(encoding="utf-8", errors="replace")
-        if distill_guard.PROVENANCE_RE.search(text):
+        if alignment_guard.PROVENANCE_RE.search(text):
             problems.extend(f"{path.name}: {item}" for item in verify_note(path))
     return problems
 
@@ -793,7 +793,7 @@ def main(argv: Iterable[str] | None = None) -> int:
                 Path(args.claude_home), _paths(args.project_root)
             )
             try:
-                distill_guard.write_private_exclusive(
+                alignment_guard.write_private_exclusive(
                     Path(args.out), json.dumps(manifest, indent=2) + "\n"
                 )
             except FileExistsError as error:

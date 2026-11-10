@@ -14,7 +14,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "cross-agent-memory-distiller" / "scripts"
+SCRIPTS = ROOT / "skills" / "x-memory-alignment" / "scripts"
 ADAPTER_SCRIPT = SCRIPTS / "codex_target.py"
 
 SPEC = importlib.util.spec_from_file_location("codex_target", ADAPTER_SCRIPT)
@@ -23,7 +23,7 @@ codex_target = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = codex_target
 SPEC.loader.exec_module(codex_target)
 
-import distill_guard  # noqa: E402
+import alignment_guard  # noqa: E402
 import claude_target  # noqa: E402
 
 
@@ -60,12 +60,12 @@ def candidate_block(
         "origin_agent": origin_agent,
         "source_scope": scope,
         "target_scope": scope,
-        "normalization": distill_guard.NORMALIZATION,
+        "normalization": alignment_guard.NORMALIZATION,
         "fingerprint": fingerprint,
     }
     if project:
         project = dict(project)
-        project.setdefault("key", distill_guard.project_key(project["target_root"]))
+        project.setdefault("key", alignment_guard.project_key(project["target_root"]))
         metadata["project"] = project
     return (
         "<!-- camd:candidate "
@@ -246,7 +246,7 @@ class ApplyTests(AdapterTestCase):
         self.assertIn("## Project: example.com/owner/example-project", text)
         self.assertNotIn(self.project_root.as_posix(), text)
         self.assertTrue(
-            distill_guard.validate_provenance_text(text, expected_target="codex").ok
+            alignment_guard.validate_provenance_text(text, expected_target="codex").ok
         )
 
     def test_unchecked_candidate_is_never_applied(self) -> None:
@@ -285,7 +285,7 @@ class ApplyTests(AdapterTestCase):
         self.assertIn("camd:provenance", text)
         records = codex_target._provenance_records(text)
         self.assertEqual(records[0]["origin_agent"], "claude-code")
-        self.assertEqual(records[0]["normalization"], distill_guard.NORMALIZATION)
+        self.assertEqual(records[0]["normalization"], alignment_guard.NORMALIZATION)
 
     def test_new_note_is_private_and_exclusive_create_never_overwrites(self) -> None:
         checklist = self.write_checklist(checklist_document(self.global_candidate()))
@@ -333,11 +333,11 @@ class ApplyTests(AdapterTestCase):
         )
         text = Path(outcome.files[0]).read_text(encoding="utf-8")
         self.assertIn(
-            f"## Project: none [key: {distill_guard.project_key(self.project_root)}]",
+            f"## Project: none [key: {alignment_guard.project_key(self.project_root)}]",
             text,
         )
         self.assertIn(
-            f"## Project: none [key: {distill_guard.project_key(other_root)}]",
+            f"## Project: none [key: {alignment_guard.project_key(other_root)}]",
             text,
         )
 

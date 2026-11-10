@@ -12,17 +12,17 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = (
     ROOT
     / "skills"
-    / "cross-agent-memory-distiller"
+    / "x-memory-alignment"
     / "scripts"
-    / "distill_guard.py"
+    / "alignment_guard.py"
 )
 FIXTURES = ROOT / "tests" / "fixtures"
 
-SPEC = importlib.util.spec_from_file_location("distill_guard", SCRIPT)
+SPEC = importlib.util.spec_from_file_location("alignment_guard", SCRIPT)
 assert SPEC and SPEC.loader
-distill_guard = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = distill_guard
-SPEC.loader.exec_module(distill_guard)
+alignment_guard = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = alignment_guard
+SPEC.loader.exec_module(alignment_guard)
 
 
 class ChecklistValidationTests(unittest.TestCase):
@@ -30,27 +30,27 @@ class ChecklistValidationTests(unittest.TestCase):
         return (FIXTURES / name).read_text(encoding="utf-8")
 
     def test_accepts_english_visible_text(self) -> None:
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             self.load("checklist-valid-en.md")
         )
         self.assertTrue(result.ok, result.errors)
         self.assertEqual((result.candidates, result.selected), (1, 1))
 
     def test_accepts_chinese_visible_text_and_project_mapping(self) -> None:
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             self.load("checklist-valid-zh.md")
         )
         self.assertTrue(result.ok, result.errors)
 
     def test_rejects_round_trip_echo(self) -> None:
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             self.load("checklist-invalid-echo.md")
         )
         self.assertFalse(result.ok)
         self.assertTrue(any("round-trip echo" in error for error in result.errors))
 
     def test_rejects_unresolved_annotation_in_selected_text(self) -> None:
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             self.load("checklist-invalid-annotation.md")
         )
         self.assertFalse(result.ok)
@@ -62,14 +62,14 @@ class ChecklistValidationTests(unittest.TestCase):
         text = self.load("checklist-invalid-annotation.md").replace(
             "- [x] Include", "- [ ] Include"
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertTrue(result.ok, result.errors)
         self.assertEqual(result.selected, 0)
 
     def test_rejects_duplicate_candidate_ids(self) -> None:
         text = self.load("checklist-valid-en.md")
         candidate = text[text.index("<!-- camd:candidate") :]
-        result = distill_guard.validate_checklist_text(text + "\n" + candidate)
+        result = alignment_guard.validate_checklist_text(text + "\n" + candidate)
         self.assertFalse(result.ok)
         self.assertTrue(any("duplicate candidate id" in error for error in result.errors))
 
@@ -79,7 +79,7 @@ class ChecklistValidationTests(unittest.TestCase):
             '"source_agent":"claude-code","target_agent":"codex"} -->\n'
             "# Nothing useful and new\n"
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertTrue(result.ok, result.errors)
         self.assertEqual(result.candidates, 0)
 
@@ -137,7 +137,7 @@ class ChecklistParsingTests(unittest.TestCase):
                 )
             )
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertTrue(result.ok, result.errors)
         self.assertEqual(result.selected, 1)
 
@@ -148,7 +148,7 @@ class ChecklistParsingTests(unittest.TestCase):
             "<!-- camd:proposed:end -->\n",
             "<!-- camd:proposed:end -->\n- [x] Include this candidate\n",
         )
-        result = distill_guard.validate_checklist_text(build_checklist(misordered))
+        result = alignment_guard.validate_checklist_text(build_checklist(misordered))
         self.assertFalse(result.ok)
         self.assertTrue(
             any("checkbox must precede" in error for error in result.errors)
@@ -162,7 +162,7 @@ class ChecklistParsingTests(unittest.TestCase):
             "Keep this rule. 【Narrow the scope first.】",
         ):
             with self.subTest(proposed=proposed):
-                result = distill_guard.validate_checklist_text(
+                result = alignment_guard.validate_checklist_text(
                     build_checklist(build_candidate(proposed=proposed))
                 )
                 self.assertFalse(result.ok)
@@ -171,7 +171,7 @@ class ChecklistParsingTests(unittest.TestCase):
                 )
 
     def test_warns_but_accepts_incidental_scaffold_word(self) -> None:
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             build_checklist(
                 build_candidate(
                     proposed=(
@@ -190,7 +190,7 @@ class ChecklistParsingTests(unittest.TestCase):
             build_candidate(candidate_id="CAMD-100"),
             build_candidate(candidate_id="CAMD-101"),
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertFalse(result.ok)
         self.assertTrue(
             any("duplicate fingerprint" in error for error in result.errors)
@@ -201,7 +201,7 @@ class ChecklistParsingTests(unittest.TestCase):
             build_candidate(candidate_id="CAMD-100"),
             build_candidate(candidate_id="CAMD-101", checkbox=" "),
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertTrue(result.ok, result.errors)
         self.assertTrue(
             any("duplicate fingerprint" in warning for warning in result.warnings)
@@ -213,7 +213,7 @@ class ChecklistParsingTests(unittest.TestCase):
             build_candidate(candidate_id="CAMD-101"),
             build_candidate(candidate_id="CAMD-102"),
         )
-        result = distill_guard.validate_checklist_text(text)
+        result = alignment_guard.validate_checklist_text(text)
         self.assertFalse(result.ok)
         self.assertTrue(
             any("duplicate fingerprint" in error for error in result.errors)
@@ -229,7 +229,7 @@ class ChecklistParsingTests(unittest.TestCase):
                 proposed="Skip this.",
             ),
         )
-        document = distill_guard.parse_checklist(text)
+        document = alignment_guard.parse_checklist(text)
         self.assertTrue(document.ok, document.result.errors)
         self.assertEqual(len(document.candidates), 2)
         approved = document.approved()
@@ -274,7 +274,7 @@ class ChecklistParsingTests(unittest.TestCase):
 class ProvenanceTests(unittest.TestCase):
     def test_audits_valid_output(self) -> None:
         text = (FIXTURES / "output-valid.md").read_text(encoding="utf-8")
-        result = distill_guard.validate_provenance_text(
+        result = alignment_guard.validate_provenance_text(
             text, expected_target="codex"
         )
         self.assertTrue(result.ok, result.errors)
@@ -289,7 +289,7 @@ class ProvenanceTests(unittest.TestCase):
             '"project":{"git_identity":"example.com/owner/repo",'
             '"mapping":"same-root"}}]} -->\n'
         )
-        result = distill_guard.validate_provenance_text(
+        result = alignment_guard.validate_provenance_text(
             text, expected_target="claude-code"
         )
         self.assertTrue(result.ok, result.errors)
@@ -302,7 +302,7 @@ class ProvenanceTests(unittest.TestCase):
             '"target_scope":"project","fingerprint":"sha256:' + "4" * 64 + '",'
             '"project":{"mapping":"same-root"}}]} -->\n'
         )
-        result = distill_guard.validate_provenance_text(text)
+        result = alignment_guard.validate_provenance_text(text)
         self.assertFalse(result.ok)
         self.assertTrue(
             any("project.git_identity" in error for error in result.errors)
@@ -310,7 +310,7 @@ class ProvenanceTests(unittest.TestCase):
 
     def test_rejects_wrong_expected_target(self) -> None:
         text = (FIXTURES / "output-valid.md").read_text(encoding="utf-8")
-        result = distill_guard.validate_provenance_text(
+        result = alignment_guard.validate_provenance_text(
             text, expected_target="claude-code"
         )
         self.assertFalse(result.ok)
@@ -322,42 +322,42 @@ class SharedHelperTests(unittest.TestCase):
     def test_private_review_artifact_is_exclusive_and_mode_0600(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "manifest.json"
-            distill_guard.write_private_exclusive(path, "first\n")
+            alignment_guard.write_private_exclusive(path, "first\n")
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             with self.assertRaises(FileExistsError):
-                distill_guard.write_private_exclusive(path, "replacement\n")
+                alignment_guard.write_private_exclusive(path, "replacement\n")
             self.assertEqual(path.read_text(encoding="utf-8"), "first\n")
 
     def test_mapping_vocabulary_is_constrained(self) -> None:
-        key = distill_guard.project_key("/a")
+        key = alignment_guard.project_key("/a")
         project = (
             '"project":{"source_root":"/a","target_root":"/a",'
             '"git_identity":"example.com/owner/repo","mapping":"%s",'
             f'"key":"{key}"}}'
         )
-        for mapping in distill_guard.MAPPING_VALUES:
+        for mapping in alignment_guard.MAPPING_VALUES:
             with self.subTest(mapping=mapping):
                 text = build_checklist(
                     build_candidate(scope_json=project % mapping)
                 )
-                self.assertTrue(distill_guard.validate_checklist_text(text).ok)
-        result = distill_guard.validate_checklist_text(
+                self.assertTrue(alignment_guard.validate_checklist_text(text).ok)
+        result = alignment_guard.validate_checklist_text(
             build_checklist(build_candidate(scope_json=project % "same_root"))
         )
         self.assertFalse(result.ok)
         self.assertTrue(any("project.mapping" in error for error in result.errors))
 
     def test_normalization_ignores_formatting_noise_only(self) -> None:
-        self.assertEqual(distill_guard.NORMALIZATION, "camd-norm/v1")
+        self.assertEqual(alignment_guard.NORMALIZATION, "camd-norm/v1")
         plain = "Compare maintained alternatives before building a new tool."
         decorated = "- **Compare** maintained   alternatives\n  before building a new tool.\n"
         self.assertEqual(
-            distill_guard.fingerprint_text(plain),
-            distill_guard.fingerprint_text(decorated),
+            alignment_guard.fingerprint_text(plain),
+            alignment_guard.fingerprint_text(decorated),
         )
         self.assertNotEqual(
-            distill_guard.fingerprint_text(plain),
-            distill_guard.fingerprint_text("Build the tool immediately."),
+            alignment_guard.fingerprint_text(plain),
+            alignment_guard.fingerprint_text("Build the tool immediately."),
         )
 
     def test_project_key_separates_roots_and_is_stable(self) -> None:
@@ -367,18 +367,18 @@ class SharedHelperTests(unittest.TestCase):
             first.mkdir()
             second.mkdir()
             self.assertEqual(
-                distill_guard.project_key(first), distill_guard.project_key(first)
+                alignment_guard.project_key(first), alignment_guard.project_key(first)
             )
             self.assertNotEqual(
-                distill_guard.project_key(first), distill_guard.project_key(second)
+                alignment_guard.project_key(first), alignment_guard.project_key(second)
             )
-            self.assertNotIn(str(first), distill_guard.project_key(first))
+            self.assertNotIn(str(first), alignment_guard.project_key(first))
 
     def test_manifest_comparison_reports_every_difference(self) -> None:
-        recorded = distill_guard.build_manifest(
+        recorded = alignment_guard.build_manifest(
             "example-home", {"kept.md": "sha256:a", "gone.md": "sha256:b"}
         )
-        problems = distill_guard.compare_manifest(
+        problems = alignment_guard.compare_manifest(
             recorded,
             {"kept.md": "sha256:c", "new.md": "sha256:d"},
             root_class="example-home",
@@ -393,7 +393,7 @@ class SharedHelperTests(unittest.TestCase):
         )
 
     def test_manifest_comparison_rejects_a_malformed_manifest(self) -> None:
-        problems = distill_guard.compare_manifest(
+        problems = alignment_guard.compare_manifest(
             {"files": []}, {}, root_class="example-home"
         )
         self.assertIn("manifest: schema must be camd/v1", problems)
@@ -404,7 +404,7 @@ class SharedHelperTests(unittest.TestCase):
         missing = build_candidate().replace(
             '"normalization":"camd-norm/v1",', ""
         )
-        result = distill_guard.validate_checklist_text(build_checklist(missing))
+        result = alignment_guard.validate_checklist_text(build_checklist(missing))
         self.assertFalse(result.ok)
         self.assertTrue(any("normalization" in error for error in result.errors))
 
@@ -414,7 +414,7 @@ class SharedHelperTests(unittest.TestCase):
             '"git_identity":"none","mapping":"same-root",'
             '"key":"0000000000000000"}'
         )
-        result = distill_guard.validate_checklist_text(
+        result = alignment_guard.validate_checklist_text(
             build_checklist(build_candidate(scope_json=project))
         )
         self.assertFalse(result.ok)
@@ -422,11 +422,11 @@ class SharedHelperTests(unittest.TestCase):
 
     def test_fingerprint_identity_keeps_versions_separate(self) -> None:
         record = {"fingerprint": "sha256:" + "1" * 64}
-        legacy = distill_guard.fingerprint_identity(record)
-        current = distill_guard.fingerprint_identity(
+        legacy = alignment_guard.fingerprint_identity(record)
+        current = alignment_guard.fingerprint_identity(
             {**record, "normalization": "camd-norm/v1"}
         )
-        future = distill_guard.fingerprint_identity(
+        future = alignment_guard.fingerprint_identity(
             {**record, "normalization": "camd-norm/v2"}
         )
         self.assertEqual(legacy, current)

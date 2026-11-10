@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_NAME = "cross-agent-memory-distiller"
+SKILL_NAME = "x-memory-alignment"
 
 
 def tracked_symlinks() -> list[Path]:

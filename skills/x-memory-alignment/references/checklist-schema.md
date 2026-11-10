@@ -64,7 +64,7 @@ there. Public reports must replace them with non-identifying path classes.
   task syntax.
 - Unchecked candidates are never applied.
 - `normalization` names the fingerprint rule and must equal the current
-  `distill_guard.NORMALIZATION` value.
+  `alignment_guard.NORMALIZATION` value.
 - Project candidates carry the shared `project.key` computed from the resolved
   target root. The validator checks it, so the user can distinguish projects
   whose Git identity is `none` before approving them.

@@ -1,7 +1,7 @@
 # Improvement Loop
 
 This reference governs how defects, friction, ideas, and surprises about this
-skill are recorded and acted upon. It is separate from the distillation protocol:
+skill are recorded and acted upon. It is separate from the alignment protocol:
 an improvement report describes the tool, while memory describes the user's work.
 The two never mix, and no report may become a memory candidate.
 
@@ -31,10 +31,15 @@ contacts the network.
 
 ## Storage
 
-Reports live under `$CAMD_STATE_DIR`, else `$XDG_STATE_HOME/cross-agent-memory-distiller`,
-else `~/.local/state/cross-agent-memory-distiller`. Directories are created
+Reports live under `$CAMD_STATE_DIR`, else `$XDG_STATE_HOME/x-memory-alignment`,
+else `~/.local/state/x-memory-alignment`. Directories are created
 `0700` and report files `0600` with `O_CREAT | O_EXCL`, so a report is never
 written over another and never becomes group or world readable.
+
+When upgrading an existing installation, inspect its recorded private state location before reinstalling.
+An explicitly configured `CAMD_STATE_DIR` continues to select that location.
+To adopt the new default, move the complete private state directory with a recoverable backup and repair any contained Git worktree registration, then reinstall and verify the skill.
+Do not discard reports or edit provenance to change a display name.
 
 Rewrites use `O_NOFOLLOW` where the platform provides it. This rejects a report
 or packet whose final path component has been replaced by a symbolic link; it is
@@ -82,7 +87,7 @@ The scanner blocks only what can be identified without interpretation:
 - absolute paths under a home directory;
 - electronic mail addresses;
 - host names, and `user@host:path` targets;
-- distillation metadata comments, namely `camd:provenance`, `camd:candidate`,
+- alignment metadata comments, namely `camd:provenance`, `camd:candidate`,
   and `camd:checklist`;
 - long hexadecimal digests;
 - the private evidence block, which is excluded from every public view.

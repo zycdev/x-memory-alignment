@@ -1,22 +1,26 @@
-# Cross-Agent Memory Distiller
+# X-Memory Alignment
 
-Cross-Agent Memory Distiller is an Agent Skills-compatible workflow for
-selectively distilling durable memory between Claude Code and Codex. It compares
-the source with the receiving agent's existing knowledge, proposes only useful
-novel or conflicting guidance, and requires an editable human approval
-checklist before any write.
+X-Memory Alignment is an Agent Skills-compatible workflow for comparing and selectively migrating existing Markdown guidance between Claude Code and Codex.
+Its inputs are user-maintained instructions, preferences, and project notes.
+It checks which information the receiving agent can use, identifies duplicates and conflicts, and presents proposed text additions in an editable approval checklist.
+Only explicitly approved additions are written to the receiving agent's native memory files.
 
-The project transfers semantic guidance, not application state. It does not
-copy transcripts, credentials, settings, histories, caches, databases, or an
-agent's entire memory directory.
+Invoke the skill as `$x-memory-alignment`.
+Its canonical directory is `skills/x-memory-alignment/`, and its default private state directory is `~/.local/state/x-memory-alignment`.
+The `CAMD_*` environment variables and versioned provenance format remain supported.
+The GitHub repository is [zycdev/x-memory-alignment](https://github.com/zycdev/x-memory-alignment).
+
+The workflow reads existing text documents and produces reviewed text additions.
+It does not train models or modify model parameters.
+Source documents remain read-only, and project-specific information retains its scope.
+Transcripts, credentials, settings, histories, caches, databases, and whole application-state directories are excluded.
 
 ## Why this project
 
-Several existing projects provide shared stores, synchronization, or handoff
-mechanisms. This repository focuses on a narrower missing layer: semantic,
-bidirectional distillation into each agent's native memory model, with target
-relevance filtering, conflict review, scope preservation, and round-trip echo
-protection.
+Several existing projects provide shared stores, synchronization, or handoff mechanisms.
+This repository focuses on reviewing existing guidance before it is added to another agent's native memory files.
+The review checks usefulness to the receiving agent, duplicates, conflicts, project scope, and provenance.
+Round-trip checks prevent information from being reimported into the agent from which it originated.
 
 Design references include:
 
@@ -46,7 +50,7 @@ machine-readable comments make validation independent of the visible language.
 ## Repository layout
 
 ```text
-skills/cross-agent-memory-distiller/
+skills/x-memory-alignment/
   SKILL.md
   references/
     protocol.md
@@ -54,7 +58,7 @@ skills/cross-agent-memory-distiller/
     improvement-loop.md
     adapters/
   scripts/
-    distill_guard.py
+    alignment_guard.py
     claude_target.py
     codex_target.py
     improve_log.py
@@ -121,14 +125,14 @@ would be a different installation model and are not part of this version.
 
 The skill keeps a private, offline queue of defects, friction, ideas, and
 surprises about itself, described in
-[`references/improvement-loop.md`](skills/cross-agent-memory-distiller/references/improvement-loop.md).
+[`references/improvement-loop.md`](skills/x-memory-alignment/references/improvement-loop.md).
 
 ```bash
-python skills/cross-agent-memory-distiller/scripts/improve_log.py \
+python skills/x-memory-alignment/scripts/improve_log.py \
   add --kind friction --component install --title "..." --body "..." \
   --initiated-by user-request
-python skills/cross-agent-memory-distiller/scripts/improve_log.py status
-python skills/cross-agent-memory-distiller/scripts/improve_log.py draft --out packet.md
+python skills/x-memory-alignment/scripts/improve_log.py status
+python skills/x-memory-alignment/scripts/improve_log.py draft --out packet.md
 ```
 
 Capture is local, offline, and private: reports are stored outside the repository
@@ -144,7 +148,7 @@ those preconditions it reports the reason and changes nothing:
 
 ```bash
 CAMD_MAINTENANCE=1 python \
-  skills/cross-agent-memory-distiller/scripts/improve_sync.py \
+  skills/x-memory-alignment/scripts/improve_sync.py \
   plan --maintenance --cycle 1
 ```
 
@@ -165,8 +169,8 @@ content.
 
 ## Status
 
-The first public release is being prepared. See
-[`CHANGELOG.md`](CHANGELOG.md) for the release contents.
+The initial public release is available, and the current branches contain the updated naming and guidance workflow.
+See [`CHANGELOG.md`](CHANGELOG.md) for the changes.
 
 ## License
 

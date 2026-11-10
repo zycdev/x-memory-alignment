@@ -1,5 +1,5 @@
 <!-- camd:checklist {"schema":"camd/v1","source_agent":"claude-code","target_agent":"codex"} -->
-# Memory distillation checklist
+# Memory alignment checklist
 
 The user may edit visible prose without changing the machine-readable comments.
 

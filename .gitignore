@@ -9,6 +9,6 @@ dist/
 build/
 *.egg-info/
 
-# Never commit live memory-distillation artifacts.
+# Never commit live memory-alignment artifacts.
 *memory-checklist*.md
 *live-e2e-private*.md

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Explicit, maintenance-only synchronization of reviewed reports with GitHub.
 
-This is the only cross-agent-memory-distiller helper allowed to invoke ``gh``.
+This is the only x-memory-alignment helper allowed to invoke ``gh``.
 It is deliberately separate from ``improve_log.py`` so ordinary report capture
 remains offline by construction. Every command requires both ``--maintenance``
 and ``CAMD_MAINTENANCE=1``. Mutating commands are dry runs unless ``--yes`` is

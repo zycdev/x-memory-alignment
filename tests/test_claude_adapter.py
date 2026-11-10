@@ -20,7 +20,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "cross-agent-memory-distiller" / "scripts"
+SCRIPTS = ROOT / "skills" / "x-memory-alignment" / "scripts"
 ADAPTER_SCRIPT = SCRIPTS / "claude_target.py"
 
 SPEC = importlib.util.spec_from_file_location("claude_target", ADAPTER_SCRIPT)
@@ -29,7 +29,7 @@ claude_target = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = claude_target
 SPEC.loader.exec_module(claude_target)
 
-distill_guard = sys.modules["distill_guard"]
+alignment_guard = sys.modules["alignment_guard"]
 
 FINGERPRINTS = {name: "sha256:" + digit * 64 for name, digit in
                 (("global", "1"), ("project", "2"), ("extra", "3"), ("echo", "4"))}
@@ -61,12 +61,12 @@ def candidate_block(
         "origin_agent": origin_agent,
         "source_scope": scope,
         "target_scope": scope,
-        "normalization": distill_guard.NORMALIZATION,
+        "normalization": alignment_guard.NORMALIZATION,
         "fingerprint": fingerprint,
     }
     if project:
         project = dict(project)
-        project.setdefault("key", distill_guard.project_key(project["target_root"]))
+        project.setdefault("key", alignment_guard.project_key(project["target_root"]))
         metadata["project"] = project
     if target_hint:
         metadata["target_hint"] = target_hint
@@ -87,7 +87,7 @@ def checklist_document(*blocks: str, source: str = "codex", target: str = "claud
     )
     return (
         "<!-- camd:checklist " + header + " -->\n"
-        "# Memory distillation checklist\n\n" + "\n".join(blocks)
+        "# Memory alignment checklist\n\n" + "\n".join(blocks)
     )
 
 
@@ -326,7 +326,7 @@ class TargetInventoryTests(AdapterTestCase):
     def test_target_inventory_stays_at_index_level(self) -> None:
         inventory = claude_target.inventory_target(self.claude_home, self.project_root)
         self.assertTrue(inventory["global_instructions"]["exists"])
-        self.assertFalse(inventory["global_instructions"]["has_distilled_section"])
+        self.assertFalse(inventory["global_instructions"]["has_aligned_section"])
         entries = inventory["project"]["memories"]
         self.assertEqual(entries[0]["name"], "existing-rule")
         self.assertEqual(entries[0]["description"], "A prior memory.")
@@ -368,7 +368,7 @@ class ApplyTests(AdapterTestCase):
         text = self.global_text()
         self.assertIn("Use a formal register.", text)
         self.assertIn("compare it with maintained", text)
-        result = distill_guard.validate_provenance_text(text, expected_target="claude-code")
+        result = alignment_guard.validate_provenance_text(text, expected_target="claude-code")
         self.assertTrue(result.ok, result.errors)
 
     def test_project_candidate_writes_memory_file_and_index_entry(self) -> None:
@@ -386,7 +386,7 @@ class ApplyTests(AdapterTestCase):
         index = (self.memory_dir / "MEMORY.md").read_text(encoding="utf-8")
         self.assertIn("[Existing rule](existing-rule.md)", index)
         self.assertIn(f"]({written.name})", index)
-        audited = distill_guard.validate_provenance_text(text, expected_target="claude-code")
+        audited = alignment_guard.validate_provenance_text(text, expected_target="claude-code")
         self.assertTrue(audited.ok, audited.errors)
 
     def test_applied_memory_keeps_no_private_paths(self) -> None:
@@ -428,7 +428,7 @@ class ApplyTests(AdapterTestCase):
             path, self.claude_home, project_roots=[self.project_root]
         )
         self.assertEqual([item["id"] for item in outcome.applied], ["CAMD-002"])
-        self.assertNotIn("camd:distilled", self.global_text())
+        self.assertNotIn("camd:aligned", self.global_text())
 
     def test_apply_is_idempotent(self) -> None:
         path = self.write_checklist(
@@ -465,6 +465,24 @@ class ApplyTests(AdapterTestCase):
         )
         self.assertEqual(first, self.tree_digest())
 
+    def test_existing_provenance_survives_section_label_changes(self) -> None:
+        path = self.write_checklist(checklist_document(self.global_candidate()))
+        claude_target.apply_checklist(path, self.claude_home)
+        global_file = self.claude_home / claude_target.GLOBAL_INSTRUCTIONS
+        archived = self.global_text().replace(
+            claude_target.GLOBAL_SECTION_START, "<!-- camd:archive:start -->"
+        ).replace(
+            claude_target.GLOBAL_SECTION_END, "<!-- camd:archive:end -->"
+        )
+        global_file.write_text(archived, encoding="utf-8")
+        inventory = claude_target.inventory_target(self.claude_home)
+        self.assertTrue(inventory["global_instructions"]["has_aligned_section"])
+
+        outcome = claude_target.apply_checklist(path, self.claude_home)
+        self.assertEqual(outcome.applied, [])
+        self.assertEqual(outcome.skipped[0]["reason"], "already-applied")
+        self.assertEqual(self.global_text(), archived)
+
     def test_second_run_appends_a_new_candidate_without_duplicating(self) -> None:
         first = self.write_checklist(checklist_document(self.global_candidate()))
         claude_target.apply_checklist(first, self.claude_home)
@@ -482,7 +500,7 @@ class ApplyTests(AdapterTestCase):
         outcome = claude_target.apply_checklist(second, self.claude_home)
         self.assertEqual([item["id"] for item in outcome.applied], ["CAMD-003"])
         text = self.global_text()
-        self.assertEqual(text.count("camd:distilled:start"), 1)
+        self.assertEqual(text.count("camd:aligned:start"), 1)
         self.assertEqual(text.count("compare it with maintained"), 1)
         self.assertEqual(text.count("transient plan files"), 1)
 
@@ -499,7 +517,7 @@ class ApplyTests(AdapterTestCase):
         with self.assertRaises(claude_target.AdapterError) as error:
             claude_target.apply_checklist(path, self.claude_home)
         self.assertIn("round-trip echo", str(error.exception))
-        self.assertNotIn("camd:distilled", self.global_text())
+        self.assertNotIn("camd:aligned", self.global_text())
 
     def test_opposite_direction_is_refused(self) -> None:
         metadata = {
@@ -511,7 +529,7 @@ class ApplyTests(AdapterTestCase):
             "origin_agent": "claude-code",
             "source_scope": "global",
             "target_scope": "global",
-            "normalization": distill_guard.NORMALIZATION,
+            "normalization": alignment_guard.NORMALIZATION,
             "fingerprint": FINGERPRINTS["extra"],
         }
         block = (
@@ -906,7 +924,7 @@ class CommandLineTests(AdapterTestCase):
         guard = subprocess.run(
             [
                 sys.executable,
-                str(SCRIPTS / "distill_guard.py"),
+                str(SCRIPTS / "alignment_guard.py"),
                 "validate-checklist",
                 str(checklist),
             ],

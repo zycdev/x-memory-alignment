@@ -15,7 +15,7 @@ Two further boundaries hold at all times:
   to record one. Every report records which of the two happened.
 
 Mechanical redaction covers only what can be identified without interpretation:
-absolute home paths, electronic mail addresses, host names, distillation
+absolute home paths, electronic mail addresses, host names, alignment
 metadata comments, long digests, and the private evidence block. Deciding whether
 ordinary prose is sensitive is left to the agents and the user.
 """
@@ -35,11 +35,11 @@ from typing import Any, Iterable, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import distill_guard  # noqa: E402  (local module beside this script)
+import alignment_guard  # noqa: E402  (local module beside this script)
 
 SCHEMA = "report/v1"
 TRIAGE_SCHEMA = "triage/v1"
-TOOL_NAME = "cross-agent-memory-distiller"
+STATE_DIRECTORY_NAME = "x-memory-alignment"
 
 KINDS = ("bug", "friction", "idea", "docs", "question", "surprise")
 SEVERITIES = ("blocking", "major", "minor", "cosmetic")
@@ -103,7 +103,7 @@ REDACTION_RULES: tuple[tuple[str, str], ...] = (
     ("email-address", r"[\w.+-]+@[\w-]+\.[\w.-]+"),
     ("host-name", r"\b(?:[\w-]+\.)+(?:com|org|net|io|dev|ai|cn|edu|gov|local)\b"),
     ("ssh-target", r"\b[\w.-]+@[\w.-]+:[\w./-]+"),
-    ("distillation-metadata", r"<!--\s*camd:(?:provenance|candidate|checklist)\b[^>]*-->"),
+    ("alignment-metadata", r"<!--\s*camd:(?:provenance|candidate|checklist)\b[^>]*-->"),
     ("long-digest", r"\b(?:sha256:)?[0-9a-f]{32,}\b"),
 )
 
@@ -160,7 +160,7 @@ def state_dir() -> Path:
     base = os.environ.get("XDG_STATE_HOME") or (
         Path(os.environ.get("HOME", str(Path.home()))) / ".local" / "state"
     )
-    return Path(base) / TOOL_NAME
+    return Path(base) / STATE_DIRECTORY_NAME
 
 
 def reports_dir() -> Path:
@@ -186,7 +186,7 @@ def _write_new_private_file(path: Path, text: str) -> None:
     write fails. A partial report would otherwise survive as an unreadable entry.
     """
 
-    distill_guard.write_private_exclusive(path, text)
+    alignment_guard.write_private_exclusive(path, text)
 
 
 def _rewrite_private_file(path: Path, text: str) -> None:
@@ -307,13 +307,13 @@ def validate_metadata(metadata: dict[str, Any], context: str) -> list[str]:
     check("agent", AGENTS)
     check("initiated_by", INITIATORS)
     fingerprint = metadata.get("fingerprint")
-    if not isinstance(fingerprint, str) or not distill_guard.FINGERPRINT_RE.fullmatch(
+    if not isinstance(fingerprint, str) or not alignment_guard.FINGERPRINT_RE.fullmatch(
         fingerprint
     ):
         errors.append(f"{context}: fingerprint must be sha256 plus 64 hex digits")
-    if metadata.get("normalization") != distill_guard.NORMALIZATION:
+    if metadata.get("normalization") != alignment_guard.NORMALIZATION:
         errors.append(
-            f"{context}: normalization must be {distill_guard.NORMALIZATION}"
+            f"{context}: normalization must be {alignment_guard.NORMALIZATION}"
         )
     occurrences = metadata.get("occurrences")
     if not isinstance(occurrences, int) or occurrences < 1:
@@ -365,7 +365,7 @@ def add_report(
     if not title.strip():
         raise ReportError("title must not be empty")
 
-    fingerprint = distill_guard.fingerprint_text(f"{title}\n{body}")
+    fingerprint = alignment_guard.fingerprint_text(f"{title}\n{body}")
     reports, warnings = scan_reports()
     existing = next(
         (
@@ -400,7 +400,7 @@ def add_report(
         "status": "new",
         "visibility": "private",
         "fingerprint": fingerprint,
-        "normalization": distill_guard.NORMALIZATION,
+        "normalization": alignment_guard.NORMALIZATION,
         "occurrences": 1,
         "skill_version": skill_version or "unknown",
         "created": stamp,

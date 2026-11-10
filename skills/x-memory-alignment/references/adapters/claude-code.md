@@ -88,7 +88,7 @@ is exactly such a note, and it would otherwise look like ordinary Codex guidance
 ### Target locations
 
 - Global candidates append to `<claude-home>/CLAUDE.md` inside a managed section
-  delimited by `camd:distilled` markers. Existing user text is never rewritten.
+  delimited by `camd:aligned` markers. Existing user text is never rewritten.
 - Project candidates create one memory file per candidate in
   `<claude-home>/projects/<slug>/memory/`, in the native front-matter format
   (`name`, `description`, `metadata.node_type`, `metadata.type`,

@@ -1,6 +1,22 @@
 # Changelog
 
-All notable changes to Cross-Agent Memory Distiller are documented here.
+All notable changes to X-Memory Alignment are documented here.
+
+## Unreleased
+
+### Changed
+
+- Rename the skill and project directory to `x-memory-alignment` and update
+  installation destinations, documentation, and test imports.
+- Rename the GitHub repository to `zycdev/x-memory-alignment` and update
+  repository links and the local remote URL.
+- Describe the workflow as comparison, conflict review, and selective migration
+  of existing Markdown guidance throughout both maintained branches.
+- Rename the shared validation module to `alignment_guard.py`, use alignment
+  terminology in generated notes and managed section markers, and move the
+  default private state directory to `x-memory-alignment`.
+- Preserve versioned fingerprints and provenance for duplicate and round-trip
+  checks, and retain explicit private state overrides for existing installations.
 
 ## 0.1.0 - 2026-08-23
 
@@ -10,7 +26,7 @@ Initial public release.
 
 - One Agent Skills-compatible workflow shared by Claude Code and Codex.
 - Bidirectional, target-native adapters for Claude-to-Codex and
-  Codex-to-Claude memory distillation.
+  Codex-to-Claude memory alignment.
 - Editable, language-adaptive approval checklists with strict mechanical
   validation before every live write.
 - Scope preservation, target-usefulness filtering, versioned fingerprints,

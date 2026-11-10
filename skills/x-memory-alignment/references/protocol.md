@@ -1,4 +1,4 @@
-# Distillation Protocol
+# Alignment Protocol
 
 This protocol is platform-neutral. Target adapters define storage discovery and
 native writes. Semantic decisions remain with the agent; helper scripts validate
@@ -133,7 +133,7 @@ private paths into durable target memory when a stable abstract identifier is
 sufficient.
 
 Fingerprints are computed over normalized meaning using the shared, versioned
-rule `distill_guard.NORMALIZATION`. Normalization removes formatting noise only;
+rule `alignment_guard.NORMALIZATION`. Normalization removes formatting noise only;
 it never claims that two differently worded rules are equivalent. Because a
 fingerprint written today must still match one computed later, changing the rule
 requires a new version rather than an edit in place.

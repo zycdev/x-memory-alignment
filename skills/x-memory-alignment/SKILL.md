@@ -1,13 +1,17 @@
 ---
-name: cross-agent-memory-distiller
-description: Distill durable, target-useful memory between Claude Code and Codex by comparing source and target memory, producing an editable approval checklist, and applying only approved novel or conflicting guidance through target-native adapters. Use for Claude-to-Codex or Codex-to-Claude memory consolidation, and to record a defect, friction, or improvement idea about this skill when the user asks; do not use for transcripts, credentials, settings, caches, databases, or wholesale state synchronization.
+name: x-memory-alignment
+description: Review and align existing Markdown instructions, preferences, and project notes between Claude Code and Codex. Compare source and target guidance, prepare an editable approval checklist, and add only approved useful information through target-native adapters. Use for cross-agent memory comparison, conflict review, and selective migration, or to record a requested improvement to this skill. Exclude transcripts, credentials, settings, caches, databases, model training, and application-state synchronization.
 ---
 
-# Cross-Agent Memory Distiller
+# X-Memory Alignment
 
-Transfer semantic guidance, not product state. The receiving agent should gain
-only durable memory that it can use and that is absent from, or meaningfully
-conflicts with, its current memory.
+Compare existing user-maintained Markdown instructions, preferences, and project notes.
+Identify useful information that is missing from, or conflicts with, the receiving agent's guidance, then prepare an editable checklist for human review.
+After explicit approval, add only the selected text to the receiving agent's native memory files.
+
+This workflow operates on existing text documents.
+It does not train models, modify model parameters, or transfer application state.
+Source documents remain read-only, and project notes retain their project scope.
 
 ## Select the direction
 
@@ -58,7 +62,7 @@ Continue only after the user explicitly says the checklist is ready.
 
 1. Re-read the exact file. Treat checkbox changes, rewritten text, and user
    annotations as authoritative.
-2. Validate structure with `scripts/distill_guard.py validate-checklist`.
+2. Validate structure with `scripts/alignment_guard.py validate-checklist`.
 3. Recheck selected items for target usefulness, duplicates, conflicts,
    provenance loops, sensitive material, transient content, and unresolved
    annotations.

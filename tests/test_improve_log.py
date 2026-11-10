@@ -16,11 +16,12 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = (
-    ROOT / "skills" / "cross-agent-memory-distiller" / "scripts" / "improve_log.py"
+    ROOT / "skills" / "x-memory-alignment" / "scripts" / "improve_log.py"
 )
 
 SPEC = importlib.util.spec_from_file_location("improve_log", SCRIPT)
@@ -62,6 +63,25 @@ class QueueTestCase(unittest.TestCase):
 
 
 class CaptureTests(QueueTestCase):
+    def test_default_storage_preserves_existing_reports(self) -> None:
+        for use_xdg in (False, True):
+            with self.subTest(use_xdg=use_xdg), mock.patch.dict(os.environ):
+                home = self.tmp / ("xdg-home" if use_xdg else "default-home")
+                os.environ["HOME"] = str(home)
+                if use_xdg:
+                    base = self.tmp / "xdg-state"
+                    os.environ["XDG_STATE_HOME"] = str(base)
+                else:
+                    base = home / ".local" / "state"
+                    os.environ.pop("XDG_STATE_HOME", None)
+                default_state = base / "x-memory-alignment"
+                os.environ["CAMD_STATE_DIR"] = str(default_state)
+                report = self.add()
+                os.environ.pop("CAMD_STATE_DIR")
+                reports = improve_log.load_reports()
+                self.assertEqual(len(reports), 1)
+                self.assertEqual(reports[0].id, report["id"])
+
     def test_report_is_created_privately(self) -> None:
         result = self.add()
         path = Path(result["path"])
@@ -120,7 +140,7 @@ class CaptureTests(QueueTestCase):
         report = improve_log.find_report(result["id"])
         self.assertEqual(improve_log.validate_metadata(report.metadata, report.id), [])
         self.assertEqual(
-            report.metadata["normalization"], improve_log.distill_guard.NORMALIZATION
+            report.metadata["normalization"], improve_log.alignment_guard.NORMALIZATION
         )
 
     def test_corrupt_neighbour_does_not_disable_capture_or_status(self) -> None:
@@ -180,7 +200,7 @@ class RedactionTests(QueueTestCase):
         self.assertIn("email-address", rules)
         self.assertIn("host-name", rules)
         self.assertIn("long-digest", rules)
-        self.assertIn("distillation-metadata", rules)
+        self.assertIn("alignment-metadata", rules)
 
     def test_findings_never_quote_the_material(self) -> None:
         body = "See /home/someone/secret-directory/file.md for details."

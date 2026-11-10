@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanical guards for cross-agent memory distillation artifacts.
+"""Mechanical guards for cross-agent memory alignment artifacts.
 
 This tool deliberately does not judge semantic relevance or decide what memory
 to import. Agents and users own those decisions. It validates the language-

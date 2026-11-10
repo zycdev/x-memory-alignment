@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Codex-to-Claude-Code adapter for cross-agent memory distillation.
+"""Codex-to-Claude-Code adapter for cross-agent memory alignment.
 
 The adapter performs only mechanical work: discovering allowed source and target
 memory, aligning projects by resolved path and repository identity, applying an
@@ -35,7 +35,7 @@ from typing import Any, Iterable, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import distill_guard  # noqa: E402  (local module beside this script)
+import alignment_guard  # noqa: E402  (local module beside this script)
 
 
 SOURCE_AGENT = "codex"
@@ -49,8 +49,8 @@ PROJECTS_DIR = "projects"
 PROJECT_MEMORY_DIR = "memory"
 PROJECT_MEMORY_INDEX = "MEMORY.md"
 
-GLOBAL_SECTION_START = "<!-- camd:distilled:start -->"
-GLOBAL_SECTION_END = "<!-- camd:distilled:end -->"
+GLOBAL_SECTION_START = "<!-- camd:aligned:start -->"
+GLOBAL_SECTION_END = "<!-- camd:aligned:end -->"
 INDEX_SECTION_START = "<!-- camd:index:start -->"
 INDEX_SECTION_END = "<!-- camd:index:end -->"
 
@@ -81,13 +81,13 @@ class AdapterError(RuntimeError):
 
 
 # Normalization and fingerprinting are shared so that a fingerprint written by
-# one adapter keeps its meaning for the other. See `distill_guard.NORMALIZATION`.
-normalize_meaning = distill_guard.normalize_meaning
-fingerprint_text = distill_guard.fingerprint_text
+# one adapter keeps its meaning for the other. See `alignment_guard.NORMALIZATION`.
+normalize_meaning = alignment_guard.normalize_meaning
+fingerprint_text = alignment_guard.fingerprint_text
 
 
 def digest_file(path: Path) -> str:
-    return distill_guard.fingerprint_bytes(path.read_bytes())
+    return alignment_guard.fingerprint_bytes(path.read_bytes())
 
 
 # ---------------------------------------------------------------------------
@@ -272,7 +272,7 @@ def read_source(codex_home: Path, relative_path: str) -> str:
 
 def source_manifest(codex_home: Path) -> dict[str, Any]:
     inventory = inventory_source(codex_home)
-    return distill_guard.build_manifest(
+    return alignment_guard.build_manifest(
         "codex-home",
         {item["path"]: item["sha256"] for item in inventory["files"]},
     )
@@ -281,7 +281,7 @@ def source_manifest(codex_home: Path) -> dict[str, Any]:
 def compare_source_manifest(codex_home: Path, manifest: dict[str, Any]) -> list[str]:
     """Return the differences that would mean the read-only source changed."""
 
-    return distill_guard.compare_manifest(
+    return alignment_guard.compare_manifest(
         manifest,
         source_manifest(codex_home)["files"],
         root_class="codex-home",
@@ -438,7 +438,9 @@ def inventory_target(
                 "sha256": digest_file(global_file),
                 "title": title,
                 "outline": list(outline),
-                "has_distilled_section": GLOBAL_SECTION_START in text,
+                "has_aligned_section": (
+                    GLOBAL_SECTION_START in text or bool(_provenance_records(text))
+                ),
             }
         )
 
@@ -485,7 +487,7 @@ def inventory_target(
 
 def _provenance_records(text: str) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
-    for raw in distill_guard.PROVENANCE_RE.findall(text):
+    for raw in alignment_guard.PROVENANCE_RE.findall(text):
         try:
             block = json.loads(raw)
         except json.JSONDecodeError:
@@ -518,7 +520,7 @@ def collect_applied_fingerprints(
         for record in _provenance_records(text):
             fingerprint = record.get("fingerprint")
             if isinstance(fingerprint, str):
-                applied.setdefault(distill_guard.fingerprint_identity(record), path.name)
+                applied.setdefault(alignment_guard.fingerprint_identity(record), path.name)
     return applied
 
 
@@ -528,11 +530,11 @@ def collect_applied_fingerprints(
 
 
 def _provenance_comment(records: Sequence[dict[str, Any]]) -> str:
-    payload = {"schema": distill_guard.SCHEMA, "records": list(records)}
+    payload = {"schema": alignment_guard.SCHEMA, "records": list(records)}
     return "<!-- camd:provenance " + json.dumps(payload, ensure_ascii=False) + " -->"
 
 
-def _record_for(candidate: distill_guard.Candidate, applied_at: str) -> dict[str, Any]:
+def _record_for(candidate: alignment_guard.Candidate, applied_at: str) -> dict[str, Any]:
     """Keep provenance minimal: enough to audit and deduplicate, nothing more."""
 
     meta = candidate.metadata
@@ -555,7 +557,7 @@ def _record_for(candidate: distill_guard.Candidate, applied_at: str) -> dict[str
         }
         target_root = project.get("target_root")
         if isinstance(target_root, str) and target_root:
-            details["key"] = distill_guard.project_key(target_root)
+            details["key"] = alignment_guard.project_key(target_root)
         record["project"] = details
     return record
 
@@ -565,7 +567,7 @@ def slugify(text: str, *, words: int = 6) -> str:
     value = re.sub(r"[^\w\s-]", " ", value, flags=re.UNICODE)
     tokens = [token for token in re.split(r"[\s_-]+", value) if token][:words]
     slug = "-".join(tokens).strip("-")
-    return slug or "distilled-memory"
+    return slug or "aligned-memory"
 
 
 def _first_sentence(text: str, limit: int = 200) -> str:
@@ -576,7 +578,7 @@ def _first_sentence(text: str, limit: int = 200) -> str:
     return sentence
 
 
-def _hint(candidate: distill_guard.Candidate, key: str) -> str | None:
+def _hint(candidate: alignment_guard.Candidate, key: str) -> str | None:
     hint = candidate.metadata.get("target_hint")
     if isinstance(hint, dict):
         value = hint.get(key)
@@ -594,13 +596,13 @@ def reject_scaffold(candidate_id: str, text: str, where: str) -> None:
     user's pre-existing target content is never reclassified as new output.
     """
 
-    if distill_guard.SCAFFOLD_ERROR_RE.search(text):
+    if alignment_guard.SCAFFOLD_ERROR_RE.search(text):
         raise AdapterError(
             f"{candidate_id}: unresolved annotation in the rendered {where}"
         )
 
 
-def validated_memory_name(candidate: distill_guard.Candidate, fallback: str) -> str:
+def validated_memory_name(candidate: alignment_guard.Candidate, fallback: str) -> str:
     name = _hint(candidate, "name") or fallback
     if not MEMORY_NAME_RE.fullmatch(name):
         raise AdapterError(
@@ -615,7 +617,7 @@ def validated_memory_name(candidate: distill_guard.Candidate, fallback: str) -> 
 
 
 def render_memory_file(
-    candidate: distill_guard.Candidate, *, name: str, applied_at: str
+    candidate: alignment_guard.Candidate, *, name: str, applied_at: str
 ) -> str:
     """Render one Claude project memory file in the native front-matter format."""
 
@@ -643,7 +645,7 @@ def render_memory_file(
 
 
 def render_index_entry(
-    candidate: distill_guard.Candidate, *, file_name: str
+    candidate: alignment_guard.Candidate, *, file_name: str
 ) -> str:
     title = _hint(candidate, "title") or _first_sentence(
         candidate.proposed_text, limit=70
@@ -658,7 +660,7 @@ def render_index_entry(
 def upsert_global_section(
     text: str, blocks: Sequence[str], *, heading: str
 ) -> str:
-    """Insert distilled guidance additively into the user instruction file."""
+    """Insert aligned guidance additively into the user instruction file."""
 
     addition = "\n\n".join(block.strip() for block in blocks)
     if GLOBAL_SECTION_START in text and GLOBAL_SECTION_END in text:
@@ -827,15 +829,15 @@ def apply_checklist(
     create_project_memory: bool = False,
     acknowledge_warnings: bool = False,
     applied_at: str | None = None,
-    global_heading: str = "Distilled Cross-Agent Guidance",
-    index_heading: str = "Distilled Cross-Agent Guidance",
+    global_heading: str = "Aligned Cross-Agent Guidance",
+    index_heading: str = "Aligned Cross-Agent Guidance",
 ) -> ApplyOutcome:
     """Apply the approved items of an edited checklist to Claude memory."""
 
     if not claude_home.is_dir():
         raise AdapterError(f"Claude home is not a directory: {claude_home}")
 
-    document = distill_guard.parse_checklist(
+    document = alignment_guard.parse_checklist(
         checklist_path.read_text(encoding="utf-8")
     )
     if not document.ok:
@@ -887,7 +889,7 @@ def apply_checklist(
         if meta.get("origin_agent") == TARGET_AGENT:
             raise AdapterError(f"{candidate.id}: refusing a round-trip echo")
 
-        fingerprint = distill_guard.fingerprint_identity(candidate.metadata)
+        fingerprint = alignment_guard.fingerprint_identity(candidate.metadata)
         if fingerprint in applied_fingerprints:
             outcome.skipped.append(
                 {
@@ -1004,9 +1006,9 @@ def verify_target(
     seen_ids: set[str] = set()
     for path in _applied_files(claude_home, project_roots):
         text = path.read_text(encoding="utf-8", errors="replace")
-        if distill_guard.PROVENANCE_RE.search(text) is None:
+        if alignment_guard.PROVENANCE_RE.search(text) is None:
             continue
-        result = distill_guard.validate_provenance_text(
+        result = alignment_guard.validate_provenance_text(
             text, expected_target=TARGET_AGENT
         )
         problems.extend(f"{path.name}: {error}" for error in result.errors)
@@ -1090,8 +1092,8 @@ def build_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument("--create-project-memory", action="store_true")
     apply_parser.add_argument("--acknowledge-warnings", action="store_true")
     apply_parser.add_argument("--timestamp")
-    apply_parser.add_argument("--global-heading", default="Distilled Cross-Agent Guidance")
-    apply_parser.add_argument("--index-heading", default="Distilled Cross-Agent Guidance")
+    apply_parser.add_argument("--global-heading", default="Aligned Cross-Agent Guidance")
+    apply_parser.add_argument("--index-heading", default="Aligned Cross-Agent Guidance")
 
     verify = subparsers.add_parser(
         "verify", help="audit applied memory and source immutability"
@@ -1141,7 +1143,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         if args.command == "snapshot-source":
             manifest = source_manifest(Path(args.codex_home))
             try:
-                distill_guard.write_private_exclusive(
+                alignment_guard.write_private_exclusive(
                     Path(args.out), json.dumps(manifest, indent=2) + "\n"
                 )
             except FileExistsError as error:
