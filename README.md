@@ -169,7 +169,7 @@ content.
 
 ## Status
 
-The initial public release is available, and the current branches contain the updated naming and guidance workflow.
+The current release is [X-Memory Alignment 0.1.1](https://github.com/zycdev/x-memory-alignment/releases/tag/v0.1.1).
 See [`CHANGELOG.md`](CHANGELOG.md) for the changes.
 
 ## License

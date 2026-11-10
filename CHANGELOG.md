@@ -2,7 +2,7 @@
 
 All notable changes to X-Memory Alignment are documented here.
 
-## Unreleased
+## 0.1.1 - 2026-11-10
 
 ### Changed
 
